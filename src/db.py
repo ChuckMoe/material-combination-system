@@ -48,7 +48,7 @@ def __fetch_by(where: str, value):
 
 
 def fetch_by_name(name: str) -> [Material]:
-    return __fetch_by('name = ?', name)
+    return __fetch_by('name = ?', [name])
 
 
 def fetch_by_attributes(attributes: dict[str, int]) -> [Material]:
@@ -61,13 +61,12 @@ def fetch_by_attributes(attributes: dict[str, int]) -> [Material]:
 def fetch_set_by_name(name: str):
     result = fetch_by_name(name)
 
-    # Todo: Where attributes smaller than result
-    where = ['{} <= ?'.format(key, value) for key, value in result.attributes]
-    sql = 'SELECT * FROM materials WHERE {}'.format(' AND '.join(where))
+    where = ['{} <= ?'.format(key, value) for key, value in result.attributes.items()]
+    sql = 'SELECT * FROM materials WHERE name != ? AND {}'.format(' AND '.join(where))
     logger.debug(sql)
 
     try:
-        return result, cursor.execute(sql).fetchall()
+        return result, cursor.execute(sql, [name, *result.attributes.values()]).fetchall()
     except sqlite3.DatabaseError as e:
         logger.error(e)
 
