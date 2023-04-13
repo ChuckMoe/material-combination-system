@@ -1,7 +1,7 @@
-# Alchemical Point Buy System
+# Material Combination System
 ## Intention
-I wanted to create a system agnostic alchemical system for rpg's.
-It should be reproducible, explainable and give players the option to
+I wanted to create a system agnostic material combination system for rpg's.
+Every recipe should reproducible, explainable and give players the option to
 experiment on their own.
 
 ## Features
@@ -13,17 +13,38 @@ you the result.
 research them or simply find new recipes by trial & error!
 
 ## Materials
-
 Every material is unique, both in its name and in its combination of attributes.
 Meaning no two materials will have the exact same attributes.
 Every material can also have a description.
 
 Example:
-```
-Dirt    | Absorbance: 5
-Stone   | Absorbance: 1
-Wood    | Absorbance: 5     - Not allowed   
-```
+
+<table>
+<thead>
+  <tr>
+    <th>Name</th>
+    <th>Absorbance</th>
+    <th>Notes</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>Dirt</td>
+    <td>5</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Stone</td>
+    <td>1</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Wood</td>
+    <td>5</td>
+    <td>not allowed</td>
+  </tr>
+</tbody>
+</table>
 
 ### Attributes
 All attributes are defined in the ```attributes.yml``` file. Changing this file
@@ -94,13 +115,41 @@ simply add all attributes individually. The resulting material is the one with
 the exact set of attributes.
 
 Example:
-```
-Dirt    | Absorbance: 5, Ractivity: 4, Corrosion Resistance: 1
-Stone   | Absorbance: 1, Strength: 7, Corrosion Resistance: 3
-->
-Some Material
-Absorbance: 6, Ractivity: 4, Strength: 7, Corrosion Resistance: 4
-```
+
+<table>
+<thead>
+  <tr>
+    <th>Name</th>
+    <th>Absorbance</th>
+    <th>Reactivity</th>
+    <th>Strength</th>
+    <th>Corrosion Resistance</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>Dirt</td>
+    <td>5</td>
+    <td>4</td>
+    <td>0</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>Stone</td>
+    <td>1</td>
+    <td>0</td>
+    <td>7</td>
+    <td>3</td>
+  </tr>
+  <tr>
+    <td>Combination<br>Material</td>
+    <td>6<br></td>
+    <td>4</td>
+    <td>7</td>
+    <td>4</td>
+  </tr>
+</tbody>
+</table>
 
 ## Rule Options
 ### Variations
@@ -163,4 +212,19 @@ bad / debilitating
 
 ## Todos
 - Command line interface
+- GUI ?
+- Lookup materials closest to X highest attributes
 - Reverse search: Specify an item and get examples on possible combinations
+  - Option for how many base-materials to look for (2 - Y)
+  - Option for max number of recipes to return
+  - Minimum of one base-material must be close to the X highest attributes
+    - Look at smallest value first
+    - Get set of possible base-materials
+    - For every material:
+      - From smallest to highest attribute:
+        - Sum attribute values
+        - If smaller, get one more material from set
+        - If greater, discard
+        - If equal, next attribute
+    - OR: n-dimensional vector addition for every attribute (pandas)
+      - v2 = np.add.outer(v, v), v3 = np.add.outer(v2, v), ...

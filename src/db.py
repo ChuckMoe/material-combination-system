@@ -16,6 +16,7 @@ def create_table():
     attributes = ', '.join(attributes)
     sql = f"CREATE TABLE materials(name TEXT UNIQUE, description TEXT, " \
           f"{attributes}, PRIMARY KEY({','.join(Material.attributes)}))"
+    logger.debug(sql)
     try:
         cursor.execute(sql)
     except sqlite3.DatabaseError:
@@ -24,6 +25,8 @@ def create_table():
 
 def fetch_all() -> [Material]:
     sql = 'SELECT * FROM materials'
+    logger.debug(sql)
+
     materials = []
     for row in cursor.execute(sql):
         attributes = {key: row[i + 2] for i, key in
@@ -34,6 +37,8 @@ def fetch_all() -> [Material]:
 
 def __fetch_by(where: str, value):
     sql = f'SELECT * FROM materials WHERE {where}'
+    logger.debug(sql)
+
     row = cursor.execute(sql, value).fetchone()
     if row is None:
         logger.error(f'There is no material: {value}')
@@ -53,6 +58,20 @@ def fetch_by_attributes(attributes: dict[str, int]) -> [Material]:
     return __fetch_by(where, list(attributes.values()))
 
 
+def fetch_set_by_name(name: str):
+    result = fetch_by_name(name)
+
+    # Todo: Where attributes smaller than result
+    where = ['{} <= ?'.format(key, value) for key, value in result.attributes]
+    sql = 'SELECT * FROM materials WHERE {}'.format(' AND '.join(where))
+    logger.debug(sql)
+
+    try:
+        return result, cursor.execute(sql).fetchall()
+    except sqlite3.DatabaseError as e:
+        logger.error(e)
+
+
 def _insert(material: Material):
     keys = 'name,description,{}'.format(','.join(Material.attributes))
     values = [material.name, material.description,
@@ -60,11 +79,13 @@ def _insert(material: Material):
 
     prepared = ','.join(['?'] * len(values))
     sql = f"INSERT INTO materials({keys}) VALUES ({prepared})"
+    logger.debug(sql)
     try:
         cursor.execute(sql, values)
     except sqlite3.DatabaseError:
         logger.warn(
-            f'Material with same attributes as {material.name} already exists')
+            f'Material with same attributes or name as {material.name} '
+            f'already exists')
 
 
 def insert(materials: [Material]):
