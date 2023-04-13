@@ -39,13 +39,54 @@ of materials.
 - stiffness
 - ductility
 - strength
-- absorbance: Groups together all types of restivity / absorbance
+- absorbance
 - corrosion_resistance
 - reactivity
 - acidity
 - electrical_capacitance
 - magic_capacitance
 - magic_affinity: Affinity to a certain kind of magic
+
+#### Ranges
+Depending on what kind of material you want to create, you should think about
+your attribute ranges.
+
+Are you looking for realism? Then how about a range from 0 to 99, putting
+everything in relative relation.
+
+Are you looking for a rarity approach? Then scale the attribute ranges by
+rarity.
+
+<table>
+<thead>
+  <tr>
+    <th>Range</th>
+    <th>Rarity</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>0 - 10</td>
+    <td>Common</td>
+  </tr>
+  <tr>
+    <td>20 - 40</td>
+    <td>Uncommon</td>
+  </tr>
+  <tr>
+    <td>80 - 120</td>
+    <td>Rare</td>
+  </tr>
+  <tr>
+    <td>240 - 320</td>
+    <td>Epic</td>
+  </tr>
+  <tr>
+    <td>640 - 800</td>
+    <td>Legendary</td>
+  </tr>
+</tbody>
+</table>
 
 ### Combining Materials
 If you want to combine or mix some materials to get another, more potent one,
@@ -119,3 +160,7 @@ bad / debilitating
   </tr>
 </tbody>
 </table>
+
+## Todos
+- Command line interface
+- Reverse search: Specify an item and get examples on possible combinations

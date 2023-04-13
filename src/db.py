@@ -32,19 +32,25 @@ def fetch_all() -> [Material]:
     return materials
 
 
-def fetch_by_attributes(attributes: dict[str, int]) -> [Material]:
-    template = '{} = ?'
-    template = [template.format(key) for key in attributes]
-
-    sql = 'SELECT * FROM materials WHERE {}'.format(' AND '.join(template))
-    row = cursor.execute(sql, list(attributes.values())).fetchone()
+def __fetch_by(where: str, value):
+    sql = f'SELECT * FROM materials WHERE {where}'
+    row = cursor.execute(sql, value).fetchone()
     if row is None:
-        logger.error(
-            f'There is no material with the attribute set:\n\t{attributes}')
+        logger.error(f'There is no material: {value}')
         return None
-
     attributes = {key: row[i + 2] for i, key in enumerate(Material.attributes)}
     return Material(row[0], row[1], **attributes)
+
+
+def fetch_by_name(name: str) -> [Material]:
+    return __fetch_by('name = ?', name)
+
+
+def fetch_by_attributes(attributes: dict[str, int]) -> [Material]:
+    template = '{} = ?'
+    where = [template.format(key) for key in attributes]
+    where = ' AND '.join(where)
+    return __fetch_by(where, list(attributes.values()))
 
 
 def _insert(material: Material):
