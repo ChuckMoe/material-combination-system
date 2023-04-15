@@ -14,8 +14,8 @@ def create_table():
     for attribute in Material.attributes:
         attributes.append(template.format(attribute))
     attributes = ', '.join(attributes)
-    sql = f"CREATE TABLE materials(name TEXT UNIQUE, description TEXT, " \
-          f"{attributes}, PRIMARY KEY({','.join(Material.attributes)}))"
+    sql = "CREATE TABLE materials(name TEXT UNIQUE, description TEXT, {}, PRIMARY KEY({}))"
+    sql = sql.format(attributes, ','.join(Material.attributes))
     logger.debug(sql)
     try:
         cursor.execute(sql)
@@ -30,32 +30,45 @@ def fetch_all() -> [Material]:
     materials = []
     for row in cursor.execute(sql):
         attributes = {key: row[i + 2] for i, key in
-            enumerate(Material.attributes)}
+                      enumerate(Material.attributes)}
         materials.append(Material(row[0], row[1], **attributes))
     return materials
 
 
-def __fetch_by(where: str, value):
+def __fetch_by(where: str, values: list):
     sql = f'SELECT * FROM materials WHERE {where}'
     logger.debug(sql)
 
-    row = cursor.execute(sql, value).fetchone()
-    if row is None:
-        logger.error(f'There is no material: {value}')
-        return None
-    attributes = {key: row[i + 2] for i, key in enumerate(Material.attributes)}
-    return Material(row[0], row[1], **attributes)
+    materials = []
+    for row in cursor.execute(sql, values):
+        attributes = {key: row[i + 2] for i, key in enumerate(Material.attributes)}
+        materials.append(Material(row[0], row[1], **attributes))
+
+    if materials:
+        return materials
+    else:
+        logger.error(f'There is no material: {values}')
+        return []
 
 
-def fetch_by_name(name: str) -> [Material]:
-    return __fetch_by('name = ?', [name])
+def fetch_by_name(name: str) -> Material:
+    return __fetch_by('name = ?', [name])[0]
 
 
-def fetch_by_attributes(attributes: dict[str, int]) -> [Material]:
+def fetch_by_attributes(attributes: [str], attribute_values: [[int]]) -> [Material]:
     template = '{} = ?'
     where = [template.format(key) for key in attributes]
     where = ' AND '.join(where)
-    return __fetch_by(where, list(attributes.values()))
+
+    where = [f'({where})' for _ in range(len(attribute_values))]
+    where = ' OR '.join(where)
+
+    flatt_values = []
+    for item in attribute_values:
+        for attribute_value in item:
+            flatt_values.append(attribute_value)
+
+    return __fetch_by(where, flatt_values)
 
 
 def fetch_set_by_name(name: str):
@@ -66,7 +79,9 @@ def fetch_set_by_name(name: str):
     logger.debug(sql)
 
     try:
-        return result, cursor.execute(sql, [name, *result.attributes.values()]).fetchall()
+        rows = cursor.execute(sql, [name, *result.attributes.values()]).fetchall()
+        logger.debug(f'Possible Materials: {len(rows)}')
+        return result, rows
     except sqlite3.DatabaseError as e:
         logger.error(e)
 
@@ -74,11 +89,10 @@ def fetch_set_by_name(name: str):
 def _insert(material: Material):
     keys = 'name,description,{}'.format(','.join(Material.attributes))
     values = [material.name, material.description,
-        *material.attributes.values()]
+              *material.attributes.values()]
 
     prepared = ','.join(['?'] * len(values))
     sql = f"INSERT INTO materials({keys}) VALUES ({prepared})"
-    logger.debug(sql)
     try:
         cursor.execute(sql, values)
     except sqlite3.DatabaseError:

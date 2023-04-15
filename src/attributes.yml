@@ -1,13 +1,9 @@
 # https://material-properties.org/
 - hardness
 - toughness
-- stiffness
-- ductility
+#- stiffness
+#- ductility
 - strength
-- absorbance
-- corrosion_resistance
-- reactivity
 - acidity
-- electrical_capacitance
-- magic_capacitance
+- capacitance
 - magic_affinity
