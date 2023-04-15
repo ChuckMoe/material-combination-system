@@ -31,7 +31,13 @@ def calculate_matrix_addition(dim, vector) -> np.ndarray:
     return matrix
 
 
-def reverse_search_attribute(vector: np.ndarray, target: int, dim: int):
+def reverse_search_attribute(vector: np.ndarray, target: int, dim: int) -> np.ndarray:
+    """
+    :param vector: Attribute vector, contains attribute values of possible materials.
+    :param target: Attribute value of result to search for.
+    :param dim: Number of dimension, aka. ingredients.
+    :return: Matrix of
+    """
     if dim < 2:
         msg = 'dim must be <= 2'
         logger.error(msg)
@@ -59,9 +65,14 @@ def calculate_combinations_for_every_attribute(matrix: np.ndarray, dim: int, res
     hits = []
     indices = np.array(list(result.attributes.values())).argsort()
     for i in indices:
-        logger.info(f'Reverse search: {Material.attributes[i]} - {matrix.shape[0]} possibilites')
+        logger.info(f'Reverse search: {Material.attributes[i]} - {matrix.shape[0]} possible materials')
         r = reverse_search_attribute(matrix[:, i], result.attributes[Material.attributes[i]], dim=dim)
         solution_space = np.unique(r, axis=None)
+
+        logger.info(f'\t{solution_space.shape[0]} possible combinations')
+        if solution_space.shape[0] == 0:
+            return np.array([])
+
         matrix = matrix[solution_space]
         hits.append(r)
     hits = np.concatenate(hits, dtype=np.uint8)
@@ -111,8 +122,14 @@ def reverse_search(name: str, ingredients: int = 3) -> [[Material]]:
     candidates = candidates.astype(np.uint8)
 
     hits = calculate_combinations_for_every_attribute(candidates, ingredients, result)
+    if hits.shape[0] == 0:
+        return []
+
     hits = calculate_combinations_for_all_attributes(hits, result)
-    logger.debug(f'Found {hits.shape[0]} combination(s)')
+    if hits.shape[0] == 0:
+        return []
+
+    logger.info(f'Found {hits.shape[0]} combination(s)')
     if hits.shape[0] == 0:
         return []
 
@@ -130,4 +147,4 @@ if __name__ == '__main__':
     # materials = [Material(f'{i}', strength=i, absorbance=i) for i in range(100)]
     # materials = [Material(f'{i}').randomise_attributes() for i in range(100000)]
     # db.insert(materials)
-    logger.info(reverse_search('5', ingredients=3))
+    reverse_search('5', ingredients=2)
