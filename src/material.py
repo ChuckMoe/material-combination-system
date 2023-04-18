@@ -9,15 +9,6 @@ def load_attributes():
     return sorted(attributes)
 
 
-def combine(*args) -> dict:
-    """Separately sums up all attributes of the given materials"""
-    attributes = {key: 0 for key in Material.attributes}
-    for material in args:
-        for key, value in material.attributes.items():
-            attributes[key] += value
-    return attributes
-
-
 class Material:
     attributes = load_attributes()
 

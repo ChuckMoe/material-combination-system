@@ -2,6 +2,7 @@ import numpy as np
 
 import db
 from __init__ import logger
+from combination import Combination, combine
 from material import Material
 
 
@@ -12,7 +13,9 @@ def remove_duplicate_materials_rows(dim, matrix) -> np.ndarray:
     matrix = np.ma.array(matrix, mask=False)
     matrix.mask[diff] = True
     matrix = matrix.compressed().reshape((-1, dim))
-    logger.debug(f'Removed {logging_rows - matrix.shape[0]} rows with repeating materials')
+    logger.debug(
+        'Removed {} rows with repeating materials'.format(
+            logging_rows - matrix.shape[0]))
     return matrix.astype(dtype=np.uint8)
 
 
@@ -20,7 +23,8 @@ def remove_duplicate_rows(matrix) -> np.ndarray:
     logging_rows = matrix.shape[0]
     matrix = np.sort(matrix, axis=1)
     matrix = np.unique(matrix, axis=0)
-    logger.debug(f'Removed {logging_rows - matrix.shape[0]} duplicate rows')
+    logger.debug(
+        'Removed {} duplicate rows'.format(logging_rows - matrix.shape[0]))
     return matrix
 
 
@@ -31,9 +35,13 @@ def calculate_matrix_addition(dim, vector) -> np.ndarray:
     return matrix
 
 
-def reverse_search_attribute(vector: np.ndarray, target: int, dim: int) -> np.ndarray:
+def reverse_search_attribute(
+        vector: np.ndarray,
+        target: int,
+        dim: int) -> np.ndarray:
     """
-    :param vector: Attribute vector, contains attribute values of possible materials.
+    :param vector: Attribute vector, contains attribute values of possible
+    materials.
     :param target: Attribute value of result to search for.
     :param dim: Number of dimension, aka. ingredients.
     :return: Matrix of
@@ -45,7 +53,9 @@ def reverse_search_attribute(vector: np.ndarray, target: int, dim: int) -> np.nd
 
     dim_warn = 5
     if dim > dim_warn:
-        logger.warn(f'Calculations with more than {dim_warn} is discouraged. This can take a while...')
+        logger.warn(
+            f'Calculations with more than {dim_warn} is discouraged. This '
+            f'can take a while...')
 
     matrix = calculate_matrix_addition(dim, vector)
     indices = np.argwhere(matrix == target)
@@ -54,7 +64,10 @@ def reverse_search_attribute(vector: np.ndarray, target: int, dim: int) -> np.nd
     return indices
 
 
-def calculate_combinations_for_every_attribute(matrix: np.ndarray, dim: int, result: Material) -> np.ndarray:
+def calculate_combinations_for_every_attribute(
+        matrix: np.ndarray,
+        dim: int,
+        result: Material) -> np.ndarray:
     """
     :param matrix: Matrix of attributes smaller than the ones of result.
     :param dim: Dimension of solution space. Denotes the amount of ingredients.
@@ -65,11 +78,17 @@ def calculate_combinations_for_every_attribute(matrix: np.ndarray, dim: int, res
     hits = []
     indices = np.array(list(result.attributes.values())).argsort()
     for i in indices:
-        logger.info(f'Reverse search: {Material.attributes[i]} - {matrix.shape[0]} possible materials')
-        r = reverse_search_attribute(matrix[:, i], result.attributes[Material.attributes[i]], dim=dim)
+        logger.info(
+            'Reverse search: {} - {} possible material(s)'.format(
+                Material.attributes[i],
+                matrix.shape[0]))
+        r = reverse_search_attribute(
+            matrix[:, i],
+            result.attributes[Material.attributes[i]],
+            dim=dim)
         solution_space = np.unique(r, axis=None)
 
-        logger.info(f'\t{solution_space.shape[0]} possible combinations')
+        logger.info(f'\t{solution_space.shape[0]} possible combination(s)')
         if solution_space.shape[0] == 0:
             return np.array([])
 
@@ -79,14 +98,16 @@ def calculate_combinations_for_every_attribute(matrix: np.ndarray, dim: int, res
     return hits
 
 
-def calculate_combinations_for_all_attributes(matrix: np.ndarray, result: Material) -> np.ndarray:
+def calculate_combinations_for_all_attributes(
+        matrix: np.ndarray,
+        result: Material) -> np.ndarray:
     """
     :param numpy.ndarray matrix: Matrix of material combinations
     :param result: The resulting material you are searching for.
     :return: Matrix of combinations for the material in question.
     """
     _, counts = np.unique(matrix, return_counts=True, axis=0)
-    indices = np.argwhere(counts == len(result.attributes)).flatten()
+    indices = np.argwhere(counts == counts.shape[0]).flatten()
     matrix = matrix[indices]
     matrix = remove_duplicate_rows(matrix)
     return matrix
@@ -98,13 +119,16 @@ def fetch_material_pool(candidates, hits, result) -> {tuple: Material}:
     """
     material_indices = np.unique(hits)
     material_pool = candidates[material_indices]
-    material_pool = db.fetch_by_attributes(result.attributes.keys(), material_pool.tolist())
+    material_pool = db.fetch_by_attributes(
+        result.attributes.keys(),
+        material_pool.tolist())
 
-    material_pool = {tuple(material.attributes.values()): material for material in material_pool}
+    material_pool = {tuple(material.attributes.values()): material for material
+        in material_pool}
     return material_pool
 
 
-def reverse_search(name: str, ingredients: int = 3) -> [[Material]]:
+def reverse_search(name: str, ingredients: int = 3) -> [Combination]:
     """
     :param name: Name of the material to search combinations for.
     :param ingredients: Number of ingredients to combine.
@@ -118,15 +142,21 @@ def reverse_search(name: str, ingredients: int = 3) -> [[Material]]:
     if not candidates:
         return np.array([])
 
-    candidates = np.array(candidates)[:, 2:]  # Remove first to entries from every row
+    # Remove first to entries from every row
+    candidates = np.array(candidates)[:, 2:]
     candidates = candidates.astype(np.uint8)
 
-    hits = calculate_combinations_for_every_attribute(candidates, ingredients, result)
+    hits = calculate_combinations_for_every_attribute(
+        candidates,
+        ingredients,
+        result)
     if hits.shape[0] == 0:
+        logger.info('0 possible combination(s)')
         return []
 
     hits = calculate_combinations_for_all_attributes(hits, result)
     if hits.shape[0] == 0:
+        logger.info('Found 0 combination(s)')
         return []
 
     logger.info(f'Found {hits.shape[0]} combination(s)')
@@ -136,15 +166,67 @@ def reverse_search(name: str, ingredients: int = 3) -> [[Material]]:
     material_pool = fetch_material_pool(candidates, hits, result)
 
     combinations = []
+    logger.info(result)
     for row in hits.tolist():
-        combinations.append([material_pool[tuple(candidates[element])] for element in row])
+        components = [material_pool[tuple(candidates[element])] for element in
+            row]
+        combination = Combination(result, components)
+        combinations.append(combination)
+        logger.info(f'\t{combination}')
 
     return combinations
 
 
 if __name__ == '__main__':
     db.create_table()
-    # materials = [Material(f'{i}', strength=i, absorbance=i) for i in range(100)]
-    # materials = [Material(f'{i}').randomise_attributes() for i in range(100000)]
-    # db.insert(materials)
-    reverse_search('5', ingredients=2)
+    materials = [
+        Material(
+            'Fire Herb',
+            hardness=1,
+            toughness=2,
+            strength=5,
+            acidity=3,
+            magic_affinity=4),
+        Material(
+            'Ice Herb',
+            hardness=1,
+            toughness=2,
+            strength=5,
+            acidity=2,
+            magic_affinity=4),
+        Material(
+            'Bark Herb',
+            hardness=1,
+            toughness=2,
+            strength=5,
+            acidity=1,
+            magic_affinity=4),
+        Material(
+            'Water Herb',
+            hardness=1,
+            toughness=2,
+            strength=5,
+            acidity=0,
+            magic_affinity=4),
+        Material(
+            'Fire Resistance Potion',
+            hardness=3,
+            toughness=6,
+            strength=15,
+            acidity=6,
+            magic_affinity=12),
+        Material(
+            'Steam Potion',
+            hardness=2,
+            toughness=4,
+            strength=10,
+            acidity=5,
+            magic_affinity=8)
+    ]
+    # materials = [Material(f'{i}', strength=i, absorbance=i) for i in
+    # range(100)]
+    # materials = [Material(f'{i}').randomise_attributes() for i in range(
+    # 100000)]
+    db.insert(materials)
+    combinations = reverse_search('Fire Resistance Potion', ingredients=3)
+    combine([materials[0], materials[1]])
