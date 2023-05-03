@@ -2,7 +2,7 @@ import numpy as np
 
 import db
 from __init__ import logger
-from combination import Combination, combine
+from combination import Combination
 from material import Material
 
 
@@ -99,11 +99,9 @@ def calculate_combinations_for_every_attribute(
 
 
 def calculate_combinations_for_all_attributes(
-        matrix: np.ndarray,
-        result: Material) -> np.ndarray:
+        matrix: np.ndarray) -> np.ndarray:
     """
     :param numpy.ndarray matrix: Matrix of material combinations
-    :param result: The resulting material you are searching for.
     :return: Matrix of combinations for the material in question.
     """
     _, counts = np.unique(matrix, return_counts=True, axis=0)
@@ -154,7 +152,7 @@ def reverse_search(name: str, ingredients: int = 3) -> [Combination]:
         logger.info('0 possible combination(s)')
         return []
 
-    hits = calculate_combinations_for_all_attributes(hits, result)
+    hits = calculate_combinations_for_all_attributes(hits)
     if hits.shape[0] == 0:
         logger.info('Found 0 combination(s)')
         return []
@@ -175,58 +173,3 @@ def reverse_search(name: str, ingredients: int = 3) -> [Combination]:
         logger.info(f'\t{combination}')
 
     return combinations
-
-
-if __name__ == '__main__':
-    db.create_table()
-    materials = [
-        Material(
-            'Fire Herb',
-            hardness=1,
-            toughness=2,
-            strength=5,
-            acidity=3,
-            magic_affinity=4),
-        Material(
-            'Ice Herb',
-            hardness=1,
-            toughness=2,
-            strength=5,
-            acidity=2,
-            magic_affinity=4),
-        Material(
-            'Bark Herb',
-            hardness=1,
-            toughness=2,
-            strength=5,
-            acidity=1,
-            magic_affinity=4),
-        Material(
-            'Water Herb',
-            hardness=1,
-            toughness=2,
-            strength=5,
-            acidity=0,
-            magic_affinity=4),
-        Material(
-            'Fire Resistance Potion',
-            hardness=3,
-            toughness=6,
-            strength=15,
-            acidity=6,
-            magic_affinity=12),
-        Material(
-            'Steam Potion',
-            hardness=2,
-            toughness=4,
-            strength=10,
-            acidity=5,
-            magic_affinity=8)
-    ]
-    # materials = [Material(f'{i}', strength=i, absorbance=i) for i in
-    # range(100)]
-    # materials = [Material(f'{i}').randomise_attributes() for i in range(
-    # 100000)]
-    db.insert(materials)
-    combinations = reverse_search('Fire Resistance Potion', ingredients=3)
-    combine([materials[0], materials[1]])

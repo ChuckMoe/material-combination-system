@@ -213,18 +213,8 @@ bad / debilitating
 ## Todos
 - Command line interface
 - GUI ?
-- Lookup materials closest to X highest attributes
-- Reverse search: Specify an item and get examples on possible combinations
-  - Option for how many base-materials to look for (2 - Y)
-  - Option for max number of recipes to return
-  - Minimum of one base-material must be close to the X highest attributes
-    - Look at smallest value first
-    - Get set of possible base-materials
-    - For every material:
-      - From smallest to highest attribute:
-        - Sum attribute values
-        - If smaller, get one more material from set
-        - If greater, discard
-        - If equal, next attribute
-    - OR: n-dimensional vector addition for every attribute (pandas)
-      - v2 = np.add.outer(v, v), v3 = np.add.outer(v2, v), ...
+- Guided recipe creation (1 result material + X base materials). Options:
+  - New base materials only
+  - New and existing base materials
+- Guides
+  - Choosing attributes for my material
